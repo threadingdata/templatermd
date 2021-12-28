@@ -1,0 +1,175 @@
+---
+title: 'Report title'
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+author: 'Threadingdata, LLC'
+output: 
+  html_document:
+    theme:
+      version: 4
+  #    bootswatch: spacelab
+      base_font: 
+        google: Prompt
+      heading_font:
+        google: Sen
+      code_font:
+        google: 
+#          #arguments to sass::font_google() 
+          family: JetBrains Mono
+    self_contained: no
+    logo: 'skeleton/logo-resized.png'
+    favicon: 'skeleton/logo-resized.png'
+    css: 'skeleton/styles.css'
+    includes:
+#      in_header: skeleton/header.html
+      after_body: skeleton/footer.html
+#editor_options: 
+#  chunk_output_type: inline
+#runtime: shiny
+---
+
+![](skeleton/logo-resized.png){width=1in} 
+
+<style type = 'text/css'>
+/* Increase the width of the published .html file */
+  .main-container {
+      max-width: 1250px;
+      margin-left: auto;
+      margin-right: auto;
+}
+</style>
+
+[RMarkdown Document Templates](https://rstudio.github.io/rstudio-extensions/rmarkdown_templates.html)
+
+[RMarkdown Template Structure - RStudio](https://bookdown.org/yihui/rmarkdown/template-structure.html)
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      warning = FALSE, 
+                      message = FALSE,
+                      error = FALSE, 
+                      cache = FALSE, 
+                      fig.width = 6,
+                      fig.height = 4,
+                      fig.align = 'center')
+library(tidyverse)
+library(lubridate)
+library(scales)
+library(jsonlite)
+library(httr)
+library(patchwork)
+library(reticulate)
+#version = '3.8.7'
+#install_python(version = version)
+#virtualenv_create("test-environment", python_version = version)
+use_virtualenv("test-environment", required = TRUE)
+virtualenv_install("test-environment", "pandas")
+library(palmerpenguins)
+
+library(thematic)
+thematic_rmd(bg = 'black',
+             fg = 'white', 
+             accent = 'grey',
+            font = font_spec(
+              #"Fredericka the Great",
+              #'Cabin Sketch',
+              #'Love Ya Like A Sister',
+              #'Finger Paint',
+              #'Faster One',
+              #'Codystar',
+              #'Monofett',
+              #'Ribeye Marrow',
+              #'Londrina Sketch',
+              #'Caveat',
+              #'Nanum Pen Script',
+              #'Cutive Mono',
+              #'Anonymous Pro',
+              #'IBM Plex Mono',
+              #'Inconsolata',
+              'KoHo',
+              scale = 1,
+              update = TRUE,
+              install = TRUE))
+penguin_df <- penguins
+df <- cars %>% 
+  tibble()
+```
+
+# Isolated RMardkown file ----
+
+This is an R Markdown document, See <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+Embed r-code inlie with simply syntax `r df %>% slice(1) %>% pull(speed)` 
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r, cars, out.width = '50%'}
+ggplot(cars %>% tibble, aes(speed, dist)) +
+  geom_point() 
+```
+
+
+For this `python` example, I have adapted the code as seen in an article by [Ekta Sharma](https://towardsdatascience.com/plotly-pandas-for-the-palmer-penguins-f5cdab3c16c8) on the Palmer Penguins dataset, go and check it out!
+
+```{python}
+# install SciPy
+import pandas
+import os
+
+# add the R df into Python
+penguins_df = r.penguin_df
+```
+
+### Initial explore
+
+Instead of `skimr` we can use `describe()`.
+
+```{python}
+penguins_df[["species", "sex", "body_mass_g", "flipper_length_mm", "bill_length_mm"]].dropna().describe(include='all')
+```
+
+------------------------------------------------------------------------
+
+### Specific statistics
+
+We can also explore specific statistics
+
+The penguins split by species show a specific relationship between weight and flipper length, where the Adelie female penguins are the lighest and have the shortest flippers.
+
+```{python, warning = FALSE, message = FALSE}
+(penguins_df
+.dropna()
+.groupby(["species", "sex"])
+.agg({"body_mass_g": "mean", "flipper_length_mm": "mean", "sex": "count"})
+.sort_index()
+)
+```
+
+Looks like the Adelie are the lightest penguin. I want to see their distribution along with the overall distribution.
+
+```{python}
+smaller = penguins_df[penguins_df.species=="Adelie"].dropna()
+smaller
+```
+
+### Plot Section
+
+Let's move on to some plots, for the overall distributions and for just the Adelie penguins. The overall distribution of the data by species shows some overlap in body weight for Adelie/Chinstrap, but more of a separation for the Gentoo penguins.
+
+```{r}
+penguin_plot <- py$smaller %>% 
+  filter(!is.na(sex)) %>% 
+  ggplot(aes(body_mass_g, fill = sex)) + 
+  geom_density(color = "white", alpha = 0.5) +
+    scale_fill_manual(values = c("darkorange","purple")) +
+  labs(x = "Penguin Bins")
+
+penguin_plot
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
